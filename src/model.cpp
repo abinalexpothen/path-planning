@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <iostream>
+#include <string.h>
 #include <vector>
 
 class Map
@@ -15,7 +17,6 @@ class Map
     int mapWidth = grid[0].size();
     int mapHeight = grid.size();
 };
-
 
 class Planner
 {
@@ -46,23 +47,101 @@ void print2DVector(std::vector<std::vector<T> > vect)
     }
 }
 
+
+// search function which generates expansions
+void search(Map map,Planner planner)
+{
+    std::vector<std::vector<int> > closed(map.mapHeight,std::vector<int>(map.mapWidth));
+    closed[planner.start[0]][planner.start[1]] = 1;
+
+    std::vector<std::vector<int> > expansion_list(map.mapHeight, std::vector<int>(map.mapWidth, -1));
+
+    // define the triplet values
+    int x = planner.start[0];
+    int y = planner.start[1];
+    int g = 0;
+
+    // store the expansions
+    std::vector<std::vector<int> > open;
+    open.push_back({g, x, y});
+
+    // flags
+    bool found = false;
+    bool resign = false;
+
+    int x2;
+    int y2;
+
+    int count = 0;
+
+    while (!found && !resign)
+    {
+        if (open.size() == 0)
+        {
+            resign = true;
+            std::cout << "Failed to reach a goal" << std::endl;
+        }
+        else
+        {
+            // remove triplets from open list
+            std::sort(open.begin(), open.end());
+            std::reverse(open.begin(), open.end());
+
+            std::vector<int> next;
+            // store the poped value into next
+            next  = open.back();
+
+            std::cout << std::endl;
+            std::cout << "Open list: " << std::endl;
+            print2DVector(open);
+            std::cout << "Cell picked: [" << next[0] << ", " << next[1] << ", " << next[2] << "]";
+
+            open.pop_back();
+
+            g = next[0];
+            x = next[1];
+            y = next[2];
+
+            expansion_list[x][y] = count;
+            count++;
+
+            //check if we reached goal
+            if (x == planner.goal[0] && y == planner.goal[1])
+            {
+                found = true;
+                std::cout << "[" << g << ", " << x << ", " << y << "]" << std::endl;
+            }
+            else
+            {
+                for (int i=0; i < planner.movements.size(); i++)
+                {
+                    x2 = x + planner.movements[i][0];
+                    y2 = y + planner.movements[i][1];
+                    if (x2 >= 0 && x2 < map.grid.size() && y2 >= 0 && y2 < map.grid[0].size())
+                    {
+                        if (closed[x2][y2] == 0 && map.grid[x2][y2] == 0)
+                        {
+                            int g2 = g + planner.cost;
+                            open.push_back({g2, x2, y2});
+                            closed[x2][y2] = 1;
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    print2DVector(expansion_list);
+}
+
 int main()
 {
-    std::cout << "Modeling the problem" << std::endl;
-    
     // Instantiate map and planner objects
     Map map;
     Planner planner;
 
-    // Print classes variables
-    std::cout << "Map:" << std::endl;
-    print2DVector(map.grid);
-    std::cout << "Start: " << planner.start[0] << " , " << planner.start[1] << std::endl;
-    std::cout << "Goal: " << planner.goal[0] << " , " << planner.goal[1] << std::endl;
-    std::cout << "Cost: " << planner.cost << std::endl;
-    std::cout << "Robot Movements: " << planner.movements_arrows[0] << " , " << planner.movements_arrows[1] << " , " << planner.movements_arrows[2] << " , " << planner.movements_arrows[3] << std::endl;
-    std::cout << "Delta:" << std::endl;
-    print2DVector(planner.movements);
+    search(map, planner);
 
     return 0;
 }
