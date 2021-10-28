@@ -56,6 +56,8 @@ void search(Map map,Planner planner)
 
     std::vector<std::vector<int> > expansion_list(map.mapHeight, std::vector<int>(map.mapWidth, -1));
 
+    std::vector<std::vector<int> > action(map.mapHeight, std::vector<int>(map.mapWidth, -1));
+    
     // define the triplet values
     int x = planner.start[0];
     int y = planner.start[1];
@@ -90,12 +92,6 @@ void search(Map map,Planner planner)
             std::vector<int> next;
             // store the poped value into next
             next  = open.back();
-
-            std::cout << std::endl;
-            std::cout << "Open list: " << std::endl;
-            print2DVector(open);
-            std::cout << "Cell picked: [" << next[0] << ", " << next[1] << ", " << next[2] << "]";
-
             open.pop_back();
 
             g = next[0];
@@ -109,7 +105,7 @@ void search(Map map,Planner planner)
             if (x == planner.goal[0] && y == planner.goal[1])
             {
                 found = true;
-                std::cout << "[" << g << ", " << x << ", " << y << "]" << std::endl;
+                //  std::cout << "[" << g << ", " << x << ", " << y << "]" << std::endl;
             }
             else
             {
@@ -124,6 +120,7 @@ void search(Map map,Planner planner)
                             int g2 = g + planner.cost;
                             open.push_back({g2, x2, y2});
                             closed[x2][y2] = 1;
+                            action[x2][y2] = i;
                         }
                     }
 
@@ -132,7 +129,30 @@ void search(Map map,Planner planner)
         }
     }
 
+    std::vector<std::vector<std::string> > policy(map.mapHeight, std::vector<std::string>(map.mapWidth, "-"));
+
+    x = planner.goal[0];
+    y = planner.goal[1];
+    
+    policy[x][y] = "*";
+    
+    while (x != planner.start[0] || y != planner.start[1])
+    {
+        x2 = x - planner.movements[action[x][y]][0];
+        y2 = y - planner.movements[action[x][y]][1];
+        
+        policy[x2][y2] = planner.movements_arrows[action[x][y]];
+        
+        x = x2;
+        y = y2;
+    }
+
+    std::cout << std::endl;
+    std::cout << "Expansion list: " << std::endl;
     print2DVector(expansion_list);
+    std::cout << std::endl;
+    std::cout << "Policy vector: " << std::endl;
+    print2DVector(policy);
 }
 
 int main()
