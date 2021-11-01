@@ -3,6 +3,9 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <matplotlibcpp.h>
+
+namespace plt = matplotlibcpp;
 
 class Map
 {
@@ -106,6 +109,72 @@ void print2DVector(std::vector<std::vector<T> > vect)
     }
 }
 
+void visualization(Map map, Planner planner)
+{
+    //Graph Format
+    plt::title("Path");
+    plt::xlim(0, map.mapHeight);
+    plt::ylim(0, map.mapWidth);
+
+    std::vector<double> green_x;
+    std::vector<double> green_y;
+    std::vector<double> red_x;
+    std::vector<double> red_y;
+    std::vector<double> black_x;
+    std::vector<double> black_y;
+
+    // Draw every grid of the map:
+    for (double x = 0; x < map.mapHeight; x++) {
+        std::cout << "Remaining Rows= " << map.mapHeight - x << std::endl;
+        for (double y = 0; y < map.mapWidth; y++) {
+            if (map.map[x][y] == 0) { //Green unkown state
+                green_x.push_back(x);
+                green_y.push_back(y);
+            }
+            else if (map.map[x][y] > 0) { //Black occupied state
+                black_x.push_back(x);
+                black_y.push_back(y);
+            }
+            else { //Red free state
+                red_x.push_back(x);
+                red_y.push_back(y);
+            }
+        }
+    }
+
+    plt::plot(green_x, green_y, "g.");
+    plt::plot(black_x, black_y, "k.");
+    plt::plot(red_x, red_y, "r.");
+
+    // Plot start and end states in blue colors using o and * respectively
+    std::vector<double> start_x;
+    std::vector<double> start_y;
+    std::vector<double> end_x;
+    std::vector<double> end_y;
+
+    start_x.push_back(planner.start[0]);
+    start_y.push_back(planner.start[1]);
+    end_x.push_back(planner.goal[0]);
+    end_y.push_back(planner.goal[1]);
+
+    plt::plot(start_x, start_y, "bo");
+    plt::plot(end_x, end_y, "b*");
+
+    std::vector<int> path_x;
+    std::vector<int> path_y;
+
+    std::cout << "Path vector size is: " << planner.path.size() << std::endl;
+    for (int i = 0; i < planner.path.size(); i++)
+    {
+        path_x.push_back(planner.path[i][0]);
+        path_y.push_back(planner.path[i][1]);
+    }
+    // plot robot path
+    plt::plot(path_x, path_y, "b-");
+
+    plt::show();
+}
+
 // search function which generates expansions
 void search(Map map,Planner planner)
 {
@@ -207,6 +276,8 @@ void search(Map map,Planner planner)
     
     policy[x][y] = "*";
     
+    planner.path.push_back({x,y});
+
     while (x != planner.start[0] || y != planner.start[1])
     {
         x2 = x - planner.movements[action[x][y]][0];
@@ -216,14 +287,19 @@ void search(Map map,Planner planner)
         
         x = x2;
         y = y2;
+
+        planner.path.push_back({x,y});
     }
 
-    std::cout << std::endl;
-    std::cout << "Expansion list: " << std::endl;
-    print2DVector(expansion_list);
-    std::cout << std::endl;
-    std::cout << "Policy vector: " << std::endl;
-    print2DVector(policy);
+    // std::cout << std::endl;
+    // std::cout << "Expansion list: " << std::endl;
+    // print2DVector(expansion_list);
+    // std::cout << std::endl;
+    // std::cout << "Policy vector: " << std::endl;
+    // print2DVector(policy);
+
+    visualization(map, planner);
+
 }
 
 int main()
